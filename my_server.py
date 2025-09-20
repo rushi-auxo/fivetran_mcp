@@ -22,12 +22,6 @@ mcp = FastMCP("My MCP Server")
 
 # ---------------- TOOLS ----------------
 @mcp.tool()
-def greet(name: str) -> str:
-    """Simple greeting tool"""
-    return f"Hello, {name}! Welcome to FastMCP."
-
-
-@mcp.tool()
 def get_connector_info(connector_id: str) -> dict:
     """
     Retrieve metadata and status for a given Fivetran connector.
