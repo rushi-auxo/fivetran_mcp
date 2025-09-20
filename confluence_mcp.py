@@ -2,6 +2,7 @@ import os
 import requests
 from fastmcp import FastMCP
 from dotenv import load_dotenv
+import datetime
 # Load env vars
 load_dotenv()
 # ==========================
@@ -10,6 +11,7 @@ load_dotenv()
 CONFLUENCE_BASE_URL = os.getenv("CONFLUENCE_BASE_URL")  # e.g. https://your-domain.atlassian.net/wiki
 CONFLUENCE_USER = os.getenv("CONFLUENCE_USER")          # your Atlassian email
 CONFLUENCE_TOKEN = os.getenv("CONFLUENCE_TOKEN")        # API token
+SPACE_KEY = os.getenv("CONFLUENCE_SPACE_KEY") 
 
 if not (CONFLUENCE_BASE_URL and CONFLUENCE_USER and CONFLUENCE_TOKEN):
     raise ValueError("Missing Confluence environment variables. "
@@ -38,24 +40,34 @@ def summarize_page(page_id: str) -> str:
 
 
 @mcp.tool()
-def create_page(space_key: str, title: str, body: str) -> dict:
-    """Create a new Confluence page in the given space."""
+def create_page(body: str) -> dict:
+    """
+    Create a new Confluence page in the given space.
+    - title auto-generated as current date + time
+    - body can be any string (conversation, JSON, etc.)
+    """
+    if not SPACE_KEY:
+        raise ValueError("Missing CONFLUENCE_SPACE_KEY in environment variables")
+
+    # auto-generate title with timestamp
+    title = f"Conversation - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+
     url = f"{CONFLUENCE_BASE_URL}/rest/api/content"
     payload = {
         "type": "page",
         "title": title,
-        "space": {"key": space_key},
+        "space": {"key": SPACE_KEY},
         "body": {
             "storage": {
-                "value": body,
+                "value": str(body),   # ensure any type gets stored as text
                 "representation": "storage"
             }
         }
     }
+
     resp = requests.post(url, auth=auth, headers=headers, json=payload)
     resp.raise_for_status()
     return resp.json()
-
 
 @mcp.tool()
 def navigate_spaces(limit: int = 10) -> list:
