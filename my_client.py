@@ -1,7 +1,7 @@
 import asyncio
 from fastmcp import Client
 
-client = Client("http://localhost:8000/mcp")
+client = Client("https://7d006c6da2ce.ngrok-free.app/mcp")
 
 async def call_tool(name: str):
     async with client:
