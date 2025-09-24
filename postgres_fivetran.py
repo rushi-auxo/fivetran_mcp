@@ -24,7 +24,7 @@ mcp = FastMCP("My MCP Server")
 # ---------------- TOOLS ----------------
 # ─── Fivetran Tools ──────────────────────────────────────────
 @mcp.tool()
-def create_connection_for_postgress(connection_name, host, port, database, user, password):
+def create_connection_for_postgress(connection_name, host, database):
     """
     Create a Fivetran PostgreSQL connector.
 
@@ -36,12 +36,14 @@ def create_connection_for_postgress(connection_name, host, port, database, user,
         host (str): PostgreSQL host address (e.g., "db.company.com").
         port (int): Port number for the PostgreSQL instance (default: 5432).
         database (str): Name of the source database.
-        user (str): Database user with read/replication privileges.
-        password (str): Password for the database user. Handle securely; do not log.
+
 
     Returns:
         str: Confirmation message including the created connector ID.
     """
+    port = 5432 
+    user = "Administratorpostgrssql" 
+    password = "Welcome@123"
     payload = {
         "service": "azure_postgres",
         "group_id": "arched_seeming",
