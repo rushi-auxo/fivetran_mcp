@@ -155,20 +155,39 @@ def assign_issue(issue_key: str, assignee: str) -> dict:
         return {"error": resp.text}
     return {"success": True}
 
+PROJECT_KEY = "KAN"  # replace with your Jira project key
+
 @mcp.tool()
-def list_issues_in_epic(epic_key: str, max_results: int = 50) -> list[dict]:
+def list_issues_in_epic_by_name(epic_name: str, max_results: int = 50) -> list[dict]:
     """
-    List all issues linked to a given Epic.
+    List all issues linked to an Epic, using the Epic's human-readable name.
     """
-    url = f"{JIRA_BASE_URL}/rest/api/3/search"
-    jql = f'"Epic Link" = "{epic_key}" ORDER BY created DESC'
-    params = {"jql": jql, "maxResults": max_results}
+    # Step 1: Find the Epic by summary
+    search_url = f"{JIRA_BASE_URL}/rest/api/3/search"
+    search_jql = f'project = "{PROJECT_KEY}" AND issuetype = Epic AND summary ~ "{epic_name}" ORDER BY created DESC'
+    search_params = {"jql": search_jql, "maxResults": 1}  # take the first match
+    search_resp = httpx.get(search_url, headers=AUTH_HEADER, params=search_params)
 
-    resp = httpx.get(url, headers=AUTH_HEADER, params=params)
-    if resp.status_code != 200:
-        return [{"error": resp.text}]
+    if search_resp.status_code != 200:
+        return [{"error": f"Failed to search Epic: {search_resp.text}"}]
 
-    issues = resp.json().get("issues", [])
+    epics = search_resp.json().get("issues", [])
+    if not epics:
+        return [{"error": f"No Epic found with name '{epic_name}'"}]
+
+    epic_key = epics[0]["key"]
+
+    # Step 2: Get issues linked to the Epic
+    # You still need the custom field ID for "Epic Link"
+    EPIC_LINK_FIELD_ID = "customfield_10008"  # replace with your Jira instance ID
+    issues_jql = f'"{EPIC_LINK_FIELD_ID}" = "{epic_key}" ORDER BY created DESC'
+    issues_params = {"jql": issues_jql, "maxResults": max_results}
+    issues_resp = httpx.get(search_url, headers=AUTH_HEADER, params=issues_params)
+
+    if issues_resp.status_code != 200:
+        return [{"error": f"Failed to fetch issues: {issues_resp.text}"}]
+
+    issues = issues_resp.json().get("issues", [])
     return [
         {
             "key": i["key"],
