@@ -155,6 +155,30 @@ def assign_issue(issue_key: str, assignee: str) -> dict:
         return {"error": resp.text}
     return {"success": True}
 
+@mcp.tool()
+def list_issues_in_epic(epic_key: str, max_results: int = 50) -> list[dict]:
+    """
+    List all issues linked to a given Epic.
+    """
+    url = f"{JIRA_BASE_URL}/rest/api/3/search"
+    jql = f'"Epic Link" = "{epic_key}" ORDER BY created DESC'
+    params = {"jql": jql, "maxResults": max_results}
+
+    resp = httpx.get(url, headers=AUTH_HEADER, params=params)
+    if resp.status_code != 200:
+        return [{"error": resp.text}]
+
+    issues = resp.json().get("issues", [])
+    return [
+        {
+            "key": i["key"],
+            "summary": i["fields"]["summary"],
+            "status": i["fields"]["status"]["name"],
+            "assignee": i["fields"]["assignee"]["displayName"] if i["fields"]["assignee"] else None,
+        }
+        for i in issues
+    ]
+
 # ---------- Resource ----------
 
 @mcp.resource("jira://{issue_key}")
