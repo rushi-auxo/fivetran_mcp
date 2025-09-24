@@ -16,75 +16,75 @@ BASE_URL = "https://api.github.com"
 
 # ---------- Existing Tools (Repos, Issues, PRs) ----------
 
-@mcp.tool()
-def list_repos(username: str) -> list[str]:
-    """List public repositories for a GitHub user"""
-    url = f"{BASE_URL}/users/{username}/repos"
-    resp = httpx.get(url, headers=HEADERS)
-    if resp.status_code != 200:
-        return [f"❌ Error {resp.status_code}: {resp.text}"]
+# @mcp.tool()
+# def list_repos(username: str) -> list[str]:
+#     """List public repositories for a GitHub user"""
+#     url = f"{BASE_URL}/users/{username}/repos"
+#     resp = httpx.get(url, headers=HEADERS)
+#     if resp.status_code != 200:
+#         return [f"❌ Error {resp.status_code}: {resp.text}"]
 
-    data = resp.json()
-    if not isinstance(data, list):
-        return [f"Unexpected response: {data}"]
+#     data = resp.json()
+#     if not isinstance(data, list):
+#         return [f"Unexpected response: {data}"]
 
-    return [repo.get("full_name", "unknown") for repo in data]
+#     return [repo.get("full_name", "unknown") for repo in data]
 
-@mcp.tool()
-def create_issue(owner: str, repo: str, title: str, body: str) -> dict:
-    """Create an issue in a GitHub repo"""
-    url = f"{BASE_URL}/repos/{owner}/{repo}/issues"
-    payload = {"title": title, "body": body}
-    resp = httpx.post(url, json=payload, headers=HEADERS)
-    if resp.status_code not in (200, 201):
-        return {"error": resp.text}
-    return resp.json()
+# @mcp.tool()
+# def create_issue(owner: str, repo: str, title: str, body: str) -> dict:
+#     """Create an issue in a GitHub repo"""
+#     url = f"{BASE_URL}/repos/{owner}/{repo}/issues"
+#     payload = {"title": title, "body": body}
+#     resp = httpx.post(url, json=payload, headers=HEADERS)
+#     if resp.status_code not in (200, 201):
+#         return {"error": resp.text}
+#     return resp.json()
 
-@mcp.tool()
-def list_issues(owner: str, repo: str, state: str = "open") -> list[dict]:
-    """List issues in a GitHub repo (default: open)"""
-    url = f"{BASE_URL}/repos/{owner}/{repo}/issues?state={state}"
-    resp = httpx.get(url, headers=HEADERS)
-    if resp.status_code != 200:
-        return [{"error": resp.text}]
-    return [{"number": i["number"], "title": i["title"], "state": i["state"]} for i in resp.json()]
+# @mcp.tool()
+# def list_issues(owner: str, repo: str, state: str = "open") -> list[dict]:
+#     """List issues in a GitHub repo (default: open)"""
+#     url = f"{BASE_URL}/repos/{owner}/{repo}/issues?state={state}"
+#     resp = httpx.get(url, headers=HEADERS)
+#     if resp.status_code != 200:
+#         return [{"error": resp.text}]
+#     return [{"number": i["number"], "title": i["title"], "state": i["state"]} for i in resp.json()]
 
-@mcp.tool()
-def close_issue(owner: str, repo: str, issue_number: int) -> dict:
-    """Close an issue by number"""
-    url = f"{BASE_URL}/repos/{owner}/{repo}/issues/{issue_number}"
-    resp = httpx.patch(url, json={"state": "closed"}, headers=HEADERS)
-    if resp.status_code != 200:
-        return {"error": resp.text}
-    return resp.json()
+# @mcp.tool()
+# def close_issue(owner: str, repo: str, issue_number: int) -> dict:
+#     """Close an issue by number"""
+#     url = f"{BASE_URL}/repos/{owner}/{repo}/issues/{issue_number}"
+#     resp = httpx.patch(url, json={"state": "closed"}, headers=HEADERS)
+#     if resp.status_code != 200:
+#         return {"error": resp.text}
+#     return resp.json()
 
-@mcp.tool()
-def repo_details(owner: str, repo: str) -> dict:
-    """Get details about a GitHub repo"""
-    url = f"{BASE_URL}/repos/{owner}/{repo}"
-    resp = httpx.get(url, headers=HEADERS)
-    if resp.status_code != 200:
-        return {"error": resp.text}
-    data = resp.json()
-    return {
-        "full_name": data.get("full_name"),
-        "description": data.get("description"),
-        "stars": data.get("stargazers_count"),
-        "forks": data.get("forks_count"),
-        "watchers": data.get("watchers_count"),
-        "language": data.get("language"),
-        "url": data.get("html_url"),
-    }
+# @mcp.tool()
+# def repo_details(owner: str, repo: str) -> dict:
+#     """Get details about a GitHub repo"""
+#     url = f"{BASE_URL}/repos/{owner}/{repo}"
+#     resp = httpx.get(url, headers=HEADERS)
+#     if resp.status_code != 200:
+#         return {"error": resp.text}
+#     data = resp.json()
+#     return {
+#         "full_name": data.get("full_name"),
+#         "description": data.get("description"),
+#         "stars": data.get("stargazers_count"),
+#         "forks": data.get("forks_count"),
+#         "watchers": data.get("watchers_count"),
+#         "language": data.get("language"),
+#         "url": data.get("html_url"),
+#     }
 
-@mcp.tool()
-def search_repos(query: str, sort: str = "stars", order: str = "desc") -> list[dict]:
-    """Search repositories by keyword"""
-    url = f"{BASE_URL}/search/repositories?q={query}&sort={sort}&order={order}"
-    resp = httpx.get(url, headers=HEADERS)
-    if resp.status_code != 200:
-        return [{"error": resp.text}]
-    items = resp.json().get("items", [])
-    return [{"full_name": r["full_name"], "stars": r["stargazers_count"], "url": r["html_url"]} for r in items]
+# @mcp.tool()
+# def search_repos(query: str, sort: str = "stars", order: str = "desc") -> list[dict]:
+#     """Search repositories by keyword"""
+#     url = f"{BASE_URL}/search/repositories?q={query}&sort={sort}&order={order}"
+#     resp = httpx.get(url, headers=HEADERS)
+#     if resp.status_code != 200:
+#         return [{"error": resp.text}]
+#     items = resp.json().get("items", [])
+#     return [{"full_name": r["full_name"], "stars": r["stargazers_count"], "url": r["html_url"]} for r in items]
 
 # ---------- PR Tools ----------
 
@@ -108,16 +108,6 @@ def create_pull_request(owner: str, repo: str, title: str, head: str, base: str,
     url = f"{BASE_URL}/repos/{owner}/{repo}/pulls"
     payload = {"title": title, "head": head, "base": base, "body": body}
     resp = httpx.post(url, json=payload, headers=HEADERS)
-    if resp.status_code not in (200, 201):
-        return {"error": resp.text}
-    return resp.json()
-
-@mcp.tool()
-def merge_pull_request(owner: str, repo: str, pr_number: int, commit_message: str = "Merging PR") -> dict:
-    """Merge a pull request by number"""
-    url = f"{BASE_URL}/repos/{owner}/{repo}/pulls/{pr_number}/merge"
-    payload = {"commit_message": commit_message}
-    resp = httpx.put(url, json=payload, headers=HEADERS)
     if resp.status_code not in (200, 201):
         return {"error": resp.text}
     return resp.json()
