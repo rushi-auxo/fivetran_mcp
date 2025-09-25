@@ -3,6 +3,7 @@ import requests
 from fastmcp import FastMCP
 from dotenv import load_dotenv
 import datetime
+import httpx
 # Load env vars
 load_dotenv()
 # ==========================
@@ -21,6 +22,11 @@ auth: tuple[str, str] = (CONFLUENCE_USER, CONFLUENCE_TOKEN)
 headers = {"Content-Type": "application/json"}
 
 mcp = FastMCP("Confluence MCP")
+
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
+
+BASE_URL = "https://api.github.com"
 
 # ==========================
 # Tools
@@ -77,6 +83,67 @@ def navigate_spaces(limit: int = 10) -> list:
     resp.raise_for_status()
     spaces = resp.json().get("results", [])
     return [{"key": s["key"], "name": s["name"]} for s in spaces]
+
+# ---------- PR Tools ----------
+
+@mcp.tool()
+def list_pull_requests(owner: str, repo: str, state: str = "open") -> list[dict]:
+    """List pull requests in a repo (default: open)"""
+    url = f"{BASE_URL}/repos/{owner}/{repo}/pulls?state={state}"
+    resp = httpx.get(url, headers=HEADERS)
+    if resp.status_code != 200:
+        return [{"error": resp.text}]
+    return [{"number": pr["number"], "title": pr["title"], "state": pr["state"], "user": pr["user"]["login"]}
+            for pr in resp.json()]
+
+@mcp.tool()
+def create_pull_request(owner: str, repo: str, title: str, head: str, base: str, body: str = "") -> dict:
+    """
+    Create a pull request.
+    - head: the branch where your changes are (feature-branch)
+    - base: the branch you want to merge into (e.g., main)
+    """
+    url = f"{BASE_URL}/repos/{owner}/{repo}/pulls"
+    payload = {"title": title, "head": head, "base": base, "body": body}
+    resp = httpx.post(url, json=payload, headers=HEADERS)
+    if resp.status_code not in (200, 201):
+        return {"error": resp.text}
+    return resp.json()
+
+# ---------- NEW: PR Review & Comment Tools ----------
+
+@mcp.tool()
+def comment_on_pull_request(owner: str, repo: str, pr_number: int, body: str) -> dict:
+    """Add a comment to a pull request"""
+    url = f"{BASE_URL}/repos/{owner}/{repo}/issues/{pr_number}/comments"
+    resp = httpx.post(url, json={"body": body}, headers=HEADERS)
+    if resp.status_code not in (200, 201):
+        return {"error": resp.text}
+    return resp.json()
+
+@mcp.tool()
+def review_pull_request(owner: str, repo: str, pr_number: int, body: str, event: str = "COMMENT") -> dict:
+    """
+    Review a pull request.
+    event can be: COMMENT, APPROVE, REQUEST_CHANGES
+    """
+    url = f"{BASE_URL}/repos/{owner}/{repo}/pulls/{pr_number}/reviews"
+    payload = {"body": body, "event": event}
+    resp = httpx.post(url, json=payload, headers=HEADERS)
+    if resp.status_code not in (200, 201):
+        return {"error": resp.text}
+    return resp.json()
+
+# ---------- Resource ----------
+
+@mcp.resource("github://{username}")
+def get_user_profile(username: str) -> dict:
+    """Fetch a GitHub user profile"""
+    url = f"{BASE_URL}/users/{username}"
+    resp = httpx.get(url, headers=HEADERS)
+    if resp.status_code != 200:
+        return {"error": resp.text}
+    return resp.json()
 
 
 # ==========================
