@@ -97,14 +97,14 @@ def list_pull_requests(owner: str, repo: str, state: str = "open") -> list[dict]
             for pr in resp.json()]
 
 @mcp.tool()
-def create_pull_request(owner: str, repo: str, title: str, head: str, base: str, body: str = "") -> dict:
+def create_pull_request(title: str, body: str = "") -> dict:
     """
     Create a pull request.
-    - head: the branch where your changes are (feature-branch)
-    - base: the branch you want to merge into (e.g., main)
+    - title: title of the PR
+    - body: description of the PR 
     """
-    url = f"{BASE_URL}/repos/{owner}/{repo}/pulls"
-    payload = {"title": title, "head": head, "base": base, "body": body}
+    url = f"{BASE_URL}/repos/agrayush2304-afk/Hackathon/pulls"
+    payload = {"title": title, "head": "dev", "base": "main", "body": body}
     resp = httpx.post(url, json=payload, headers=HEADERS)
     if resp.status_code not in (200, 201):
         return {"error": resp.text}
@@ -113,9 +113,9 @@ def create_pull_request(owner: str, repo: str, title: str, head: str, base: str,
 # ---------- NEW: PR Review & Comment Tools ----------
 
 @mcp.tool()
-def comment_on_pull_request(owner: str, repo: str, pr_number: int, body: str) -> dict:
+def comment_on_pull_request(pr_number: int, body: str) -> dict:
     """Add a comment to a pull request"""
-    url = f"{BASE_URL}/repos/{owner}/{repo}/issues/{pr_number}/comments"
+    url = f"{BASE_URL}/repos/agrayush2304-afk/Hackathon/issues/{pr_number}/comments"
     resp = httpx.post(url, json={"body": body}, headers=HEADERS)
     if resp.status_code not in (200, 201):
         return {"error": resp.text}
